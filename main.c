@@ -22,13 +22,11 @@
 int main(int argc, char *argv[]) {
     int ret;
     char * filename;
-    int i, k, print;
+    int i;
     long j;
 
     char  copyright[CDF_COPYRIGHT_LEN+1];
     long  recNum, numRecs;
-    long pos;
-    long  d_size[CDF_MAX_DIMS];
     long  version, release, increment;
     double t_start, t_end;
 
@@ -103,19 +101,17 @@ int main(int argc, char *argv[]) {
     t_start = parse_time(argv[1]); 
     t_end = parse_time(argv[2]);
 
-#if 1
     status = CDFgetzVarNumRecsWritten(id, head->num, &numRecs);
     records = (struct fgm_gse_rec *)malloc(numRecs * sizeof(struct fgm_gse_rec));
     
     printf("time,bz\n");
-    for (j=0; j < numRecs; j++) {
+    for (j = 0; j < numRecs; j++) {
         records[j].var_num[0] = head->num;
         records[j].var_num[1] = ((zlist *)(head->next))->num;
         fetch_fgm_gse_rec(id, j, &records[j]);
         if (records[j].time > t_start && records[j].time < t_end)
             printf("%f,%f\n", records[j].time, records[j].b_field[2]);
     }
-#endif
 
     return 0;
 }
@@ -148,7 +144,6 @@ zlist * zlist_init(CDFid id, char * var_name) {
     int status;
     long num;
     long num_recs;
-    long len;
     int i;
 
     zlist * z_attrs;
