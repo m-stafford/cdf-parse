@@ -13,9 +13,15 @@ typedef struct zlist {
     long dim_indices[CDF_MAX_DIMS];
     long dim_varys[CDF_MAX_DIMS];
     long rec_vary;
-    
-    void * data;
 } zlist;
+
+struct fgm_gse_rec {
+    long var_num[2]; /* CDF Variable Number */
+    double time; /* Dependent Var */
+    float b_field[3]; /* Three Coordinate Magnetic Field */
+};
+void fetch_fgm_gse_rec(CDFid, long, struct fgm_gse_rec *);
+
 
 zlist * zlist_init(CDFid, char *); 
 int check_file(char *);

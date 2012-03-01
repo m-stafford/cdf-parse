@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
+
 
 #include "cdf.h"
 #include "main.h"
@@ -20,7 +22,8 @@
 int main(int argc, char *argv[]) {
     int ret;
     char * filename;
-    int i, j, k, print;
+    int i, k, print;
+    long j;
 
     char  copyright[CDF_COPYRIGHT_LEN+1];
     long  recNum, numRecs;
@@ -29,6 +32,8 @@ int main(int argc, char *argv[]) {
     long  version, release, increment;
     double t_start, t_end;
 
+    struct fgm_gse_rec * records;
+    
     zlist * head; 
     zlist * tail;
     zlist * curr;
@@ -94,56 +99,21 @@ int main(int argc, char *argv[]) {
 
     curr = head;
 
+
     t_start = parse_time(argv[1]); 
     t_end = parse_time(argv[2]);
 
 #if 1
     status = CDFgetzVarNumRecsWritten(id, head->num, &numRecs);
+    records = (struct fgm_gse_rec *)malloc(numRecs * sizeof(struct fgm_gse_rec));
+    
+    printf("time,bz\n");
     for (j=0; j < numRecs; j++) {
-        curr = head;
-        print = 1;
-        while (curr != NULL) {
-            if (curr->dims > 0) {
-                for (k = 0; k < curr->dim_sizes[0]; k++) {
-                    status = CDFgetzVarSeqData(id, curr->num, curr->data);
-
-                    status = CDFgetzVarSeqPos(id, curr->num, &pos, d_size);
-                    if (status != CDF_OK) 
-                        handle_err (status);
-                    if (curr->datatype == CDF_FLOAT && print == 1)  {
-                        printf("%f,", *(float *)curr->data);
-                    }
-                    else if (curr->datatype == CDF_DOUBLE) {
-                        if (*(double *)curr->data > t_start &&
-                                *(double *)curr->data < t_end) {
-                            printf("%f,", *(double *)curr->data);
-                        }
-                        else {
-                            print = 0;
-                        }
-                    }
-                }
-            } else {
-                status = CDFgetzVarSeqData(id, curr->num, curr->data);
-                status = CDFgetzVarSeqPos(id, curr->num, &pos, d_size);
-                if (status != CDF_OK) 
-                    handle_err (status);
-                if (curr->datatype == CDF_FLOAT && print == 1) 
-                    printf("%f,", *(float *)curr->data);
-                else if (curr->datatype == CDF_DOUBLE) {
-                    if (*(double *)curr->data > t_start &&
-                            *(double *)curr->data < t_end) {
-                        printf("%f,", *(double *)curr->data);
-                    }
-                    else {
-                        print = 0;
-                    }
-                }
-            }
-            curr = curr->next;
-        }
-        if (print)
-            printf("\n");
+        records[j].var_num[0] = head->num;
+        records[j].var_num[1] = ((zlist *)(head->next))->num;
+        fetch_fgm_gse_rec(id, j, &records[j]);
+        if (records[j].time > t_start && records[j].time < t_end)
+            printf("%f,%f\n", records[j].time, records[j].b_field[2]);
     }
 #endif
 
@@ -152,7 +122,7 @@ int main(int argc, char *argv[]) {
 
 void handle_err(int status) {
     char message[CDF_STATUSTEXT_LEN+1];
-
+    printf("%d\n", status);
     if (status < CDF_WARN) {
         printf("An error has occurred, halting...\n");
         CDFgetStatusText(status, message);
@@ -204,14 +174,6 @@ zlist * zlist_init(CDFid id, char * var_name) {
     for (i = 0; i < z_attrs->dims; i++) 
         z_attrs->dim_indices[i] = 0;
 
-    status = CDFgetDataTypeSize(z_attrs->datatype, &len);
-    len = len * z_attrs->num_elements;
-
-    if (z_attrs->datatype == CDF_CHAR || z_attrs->datatype == CDF_UCHAR) 
-        ++len;
-    
-    z_attrs->data = (void *)malloc(len);
-
     return z_attrs;
 }
 
@@ -227,10 +189,22 @@ double parse_time(char * time_str) {
     
     time->tm_mon -= 1;
     time->tm_year += 100;
-    secs = gmtime(time);
+    secs = mktime(time);
 
     return secs; 
 }
+
+
+void fetch_fgm_gse_rec(CDFid id, long rec_num, struct fgm_gse_rec * record) {
+    CDFstatus status;
+    
+    //printf("%ld,", rec_num);
+    usleep(5);
+    status = CDFgetzVarsRecordDatabyNumbers(id, 2, record->var_num, rec_num, 
+                                    &(record->time));
+    if (status < CDF_OK)
+        handle_err(status);
+} 
 
 int check_file(char * filename) {
     return 0;

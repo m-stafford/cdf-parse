@@ -3,5 +3,5 @@ mydata <- read.csv("data.csv")
 args <- commandArgs(trailingOnly = TRUE)
 plotname <- args[1]
 jpeg(plotname, width = 900, height = 700)
-suppressWarnings(plot(mydata$a,mydata$d, type = "line",ylab="B, z-dir, GSE coord, nT", xlab="Time from UNIX Epoch in seconds"))
+suppressWarnings(plot(mydata$time,mydata$bz, type = "line",ylab="B, z-dir, GSE coord, nT", xlab="Time from UNIX Epoch in seconds"))
 
