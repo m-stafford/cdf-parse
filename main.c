@@ -22,13 +22,18 @@
 int main(int argc, char *argv[]) {
     int ret;
     char * filename;
-    int i;
-    long j;
+    int i, b_change;
+    long j, k;
+    long interval;
 
     char  copyright[CDF_COPYRIGHT_LEN+1];
     long  recNum, numRecs;
     long  version, release, increment;
     double t_start, t_end;
+    double t_int;
+    float b_min, b_max;
+    long b_max_rec;
+    long b_min_rec;
 
     struct fgm_gse_rec * records;
     
@@ -109,9 +114,38 @@ int main(int argc, char *argv[]) {
         records[j].var_num[0] = head->num;
         records[j].var_num[1] = ((zlist *)(head->next))->num;
         fetch_fgm_gse_rec(id, j, &records[j]);
+#if 0
         if (records[j].time > t_start && records[j].time < t_end)
             printf("%f,%f\n", records[j].time, records[j].b_field[2]);
+#endif
     }
+
+    t_int = records[1].time - records[0].time;
+    interval = (30 / t_int);
+    b_max_rec = 0;
+    b_min_rec = 0;
+    for (j = 0; j < numRecs; j++) {
+        b_min = records[j].b_field[2];
+        b_max = records[j].b_field[2];
+        b_change = 0;
+
+        for (k = 0; k < interval; k++) {
+            if (j + k < numRecs) {
+                if (records[j+k].b_field[2] > b_max) {
+                    b_max = records[j+k].b_field[2];
+                    b_max_rec = j+k;
+                }
+
+                if (records[j+k].b_field[2] < b_min) {
+                    b_min = records[j+k].b_field[2];
+                    b_min_rec = j+k;
+                }
+            }
+        }
+
+        if (((b_max - b_min) > 10))
+            printf("Event? %ld %f %f %ld\n", j, b_max, b_min, b_max_rec);
+    }   
 
     return 0;
 }
