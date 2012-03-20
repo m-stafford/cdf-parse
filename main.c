@@ -34,7 +34,10 @@ int main(int argc, char *argv[]) {
     float b_min, b_max;
     long b_max_rec;
     long b_min_rec;
+    long last_rec;
+    long last_min;
 
+    time_t time;
     struct fgm_gse_rec * records;
     
     zlist * head; 
@@ -124,27 +127,40 @@ int main(int argc, char *argv[]) {
     interval = (30 / t_int);
     b_max_rec = 0;
     b_min_rec = 0;
-    for (j = 0; j < numRecs; j++) {
-        b_min = records[j].b_field[2];
-        b_max = records[j].b_field[2];
+    last_rec = 0;
+    for (j = 0; j < numRecs; j++)  {
+        b_min = 0; 
+        b_max = 0;
         b_change = 0;
 
         for (k = 0; k < interval; k++) {
             if (j + k < numRecs) {
                 if (records[j+k].b_field[2] > b_max) {
-                    b_max = records[j+k].b_field[2];
-                    b_max_rec = j+k;
+                    if (records[j+k+1].b_field[2] < records[j+k].b_field[2]) {
+                        b_max = records[j+k].b_field[2];
+                        b_max_rec = j+k;
+                    }
                 }
-
+                /* Looking for a negative dip */
                 if (records[j+k].b_field[2] < b_min) {
-                    b_min = records[j+k].b_field[2];
-                    b_min_rec = j+k;
+                    if (records[j+k+1].b_field[2] > records[j+k].b_field[2]) {
+                        b_min = records[j+k].b_field[2];
+                        b_min_rec = j+k;
+                        b_change = 1;
+                    }
                 }
             }
         }
 
-        if (((b_max - b_min) > 10))
-            printf("Event? %ld %f %f %ld\n", j, b_max, b_min, b_max_rec);
+        if (((b_max - b_min) > 10) && b_change) {
+            if (last_rec != b_max_rec && last_min != b_min_rec) {
+                time = records[b_max_rec].time;
+                printf("Event? %f %f %ld %s", b_max, b_min, b_max_rec,                                          asctime(gmtime(&time)));
+                last_rec = b_max_rec;
+                last_min = b_min_rec;
+                j += interval;
+            }
+        }
     }   
 
     return 0;

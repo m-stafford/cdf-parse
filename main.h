@@ -1,4 +1,5 @@
 #include "cdf.h"
+
 typedef struct zlist {
     char * prev;
     char * next;
@@ -20,9 +21,12 @@ struct fgm_gse_rec {
     double time; /* Dependent Var */
     float b_field[3]; /* Three Coordinate Magnetic Field */
 };
+
+struct event {
+    long rec_num;
+};
+
 void fetch_fgm_gse_rec(CDFid, long, struct fgm_gse_rec *);
-
-
 zlist * zlist_init(CDFid, char *); 
 int check_file(char *);
 void handle_err(int);
