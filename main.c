@@ -26,6 +26,7 @@ int main(int argc, char *argv[]) {
 
     long  num_recs, num_vars, num_dims;
     char * tmp_data;
+    char * s;
     long data_type;
     long dim_sizes[CDF_MAX_DIMS];
     char * var_names[256];
@@ -63,7 +64,28 @@ int main(int argc, char *argv[]) {
                 GET_, zVAR_NUMRECS_, &num_recs, NULL_);
     handle_err(status);
 
+    for (i = 0; i < num_vars; i++) {
+            status = CDFlib(SELECT_, CDF_, id,
+                        SELECT_, zVAR_NAME_, argv[2 + i],
+                        GET_, zVAR_NUMDIMS_, &num_dims, NULL_);
+            handle_err(status);
 
+            status = CDFlib(GET_, zVAR_DIMSIZES_, dim_sizes, 
+                        GET_, zVAR_DATATYPE_, &data_type, NULL_);
+            handle_err(status);
+
+            if ((dim_sizes[0] > 0) && (num_dims != 0)) {
+                for (j = 0; j < dim_sizes[0]; j++) {
+                    s = malloc(snprintf(NULL, 0, "%s[%ld]", argv[2+i], j) + 1);
+                    sprintf(s, "%s[%ld]", argv[2+i], j);
+                    data_list = list_queue(data_list, CDF_CHAR, s);
+                }
+            } else {
+                data_list = list_queue(data_list, CDF_CHAR, argv[2+i]);
+            }
+    }
+    print_list(data_list);
+    data_list = NULL;
     
     for (i = 0; i < num_recs; i++) {
 
@@ -77,6 +99,13 @@ int main(int argc, char *argv[]) {
             status = CDFlib(GET_, zVAR_DIMSIZES_, dim_sizes, 
                         GET_, zVAR_DATATYPE_, &data_type, NULL_);
             handle_err(status);
+        
+            if (i == 0) {
+                for (k = 0; k < num_vars; k++) {
+                    if ((dim_sizes[0] > 0) && (num_dims != 0)) {
+                    }
+                }
+            }
 
             if ((dim_sizes[0] > 0) && (num_dims != 0)) {
                 for (k = 0; k < dim_sizes[0]; k++) {
@@ -202,6 +231,9 @@ void printDataType(char * data, long data_type) {
             break;
         case CDF_DOUBLE:
             printf("%f", *(double *)data);    
+            break;
+        case CDF_CHAR:
+            printf("%s", (char *)data);    
             break;
     }
 }
